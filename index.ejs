@@ -1,0 +1,149 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+        <meta charset="UTF-8">
+		<title>ESP8266 WebSocket</title>
+	</head>
+	<body>
+        <% if (user) { %>
+            <a href="/logout">Logout</a>
+            <a href="/database">Database</a>
+        <% } else { %>
+            <a href="/login">Đăng nhập</a>
+        <% } %>
+		<div> Webscoket status 
+			<span id="status" style="font-weight: bold;"> disconnected </span>
+		</div>
+        <p>Cảm biến: <span id='ketqua'></span></p>
+        <label></label><br>
+        
+        <button type="button" id="btn">Nhiet do va do am hien tai</button>
+        <input type="text" id="input" disabled="true"/>
+        <form>
+        <br>
+        <input type="radio" name="chon" value="left">scroll left</input>
+        <br>
+        <input type="radio" name="chon" value="right">scroll right</input>
+        <br>
+        <input type="radio" name="chon" value="up">scroll up</input>
+        <br>
+        <input type="radio" name="chon" value="down">scroll down</input>
+        <br>
+        <button type="button" id="btnChon" >Áp dụng</button>
+        </form>
+        
+        <!--
+		<div> Control LED 
+			<input type="checkbox" id="led" name="led" disabled="true" />
+		</div>
+        -->
+		<script type="text/javascript">
+            //var input = document.getElementById('input').value;
+            //var button = document.getElementById('btn');
+            //var led = document.getElementById('led');
+            var url = window.location.host; // hàm trả về url của trang hiện tại kèm theo port
+            var ws = new WebSocket('ws://' + url + '/ws'); // mở 1 websocket với port 8000
+            const ketqua = document.getElementById('ketqua');
+            var myName = document.getElementById("input").value;
+
+            const button = document.getElementById('btn');//31thang11
+
+
+            console.log('connecting...')
+            ws.onopen = function() //khi websocket được mở thì hàm này sẽ được thưc hiện
+            {
+                document.getElementById('status').innerHTML = 'Connected';
+                input.disabled = false; //khi websocket được mở, mới cho phép
+                console.log('connected...')
+            };
+            function blobToString(b) {
+                var u, x;
+                u = URL.createObjectURL(b);
+                x = new XMLHttpRequest();
+                x.open('GET', u, false); // although sync, you're not fetching over internet
+                x.send();
+                URL.revokeObjectURL(u);
+                return x.responseText;
+            }
+
+
+        function clickButton() {button.click();}
+                      setInterval(clickButton, 2000);
+
+
+
+
+        function updateInput() {
+                  var tmp = blobToString(ws.readyState === 1 ? ws.receive() : '0');
+                  document.getElementById('input').value = tmp;
+                  // Đặt lại thời gian chạy hàm
+                  setTimeout(updateInput, 1000);
+}
+            /*
+            ws.onmessage = function (e) // sự kiện xảy ra khi client nhận dữ liệu từ server
+            {
+
+                if (blobToString(e.data) == 'BTN_PRESSED') {
+                    button.checked = true;
+                } else if (blobToString(e.data) == 'BTN_RELEASE') {
+                    button.checked = false;
+                }
+            };
+            */
+
+            let ldr = '';
+        ws.onmessage = function(evt) {
+              var tmp = blobToString(evt.data);
+              var today = new Date();
+              var date = today.getDate() + '-' + (today.getMonth() + 1) + '-' + today.getFullYear() + '-' + today.getHours() + 'h:' + today.getMinutes() + 'p:' + today.getSeconds() + 's';
+              ketqua.innerHTML = date + "\t giá trị cảm biến: " + tmp;
+              // Thay đổi giá trị textbox
+              document.getElementById('input').value = tmp;
+            };
+
+
+            document.getElementById("btnChon").onclick = function(){
+                var radio=document.querySelector('input[type="radio"]:checked');
+                switch(radio.value){
+                    case 'left':
+                        ws.send(1)
+                        break;
+                    case 'right':
+                        ws.send(2)
+                        break;
+                    case 'up':{
+                          ws.send(3)
+                        break;                      
+                    }
+
+                    case 'down':
+                            ws.send(4)
+                        break;
+                }
+            }
+
+            ws.onopen = function() {
+  document.getElementById('status').innerHTML = 'Connected';
+  // Khởi chạy hàm updateInput
+  updateInput();
+};
+            
+
+            ws.onclose = function() { // hàm này sẽ được thực hiện khi đóng websocket
+                //led.disabled = true;
+                document.getElementById('status').innerHTML = 'Connected';
+            };
+            //led.onchange = function() { // thực hiện thay đổi bật/tắt led
+            //    var led_status = 'LED_OFF';
+            //    if (led.checked) {
+            //        led_status = 'LED_ON';
+            //    }
+            //    ws.send(led_status)
+            //}
+            document.getElementById("btn").onclick = function(){
+                var myName = document.getElementById("input").value;
+                ws.send(myName)
+            }
+            </script>
+	</body>
+</html>
